@@ -130,33 +130,31 @@
 
     <section id="install" class="section section-alt">
       <h2>Use it on Windows</h2>
-      <p class="section-lede">Authorized tenants only. Keep demo mode on until you have written approval.</p>
+      <p class="section-lede">Three commands. Demo mode is on by default — no tenant is contacted until you change that.</p>
       <ol class="steps">
         <li>
-          <strong>Prerequisites</strong>
-          <p>Windows 10/11, Python 3.11+, PowerShell 5.1+, and (for live runs) an Entra ID app registration with least-privilege Graph permissions.</p>
+          <strong>Install Python 3.11+</strong>
+          <p>From <a href="https://www.python.org/downloads/windows/">python.org</a>. Check <strong>Add python.exe to PATH</strong>. Open a new PowerShell and run <code>py -3 --version</code>.</p>
         </li>
         <li>
-          <strong>Clone and setup</strong>
+          <strong>Open the project folder in PowerShell</strong>
+          <p>Unzip the download (or clone the repo). In File Explorer open the folder, then right-click → <strong>Open in Terminal</strong>.</p>
           <pre><code>git clone https://github.com/vladjoh/RedTeam.git
-cd RedTeam
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-windows.ps1</code></pre>
+cd RedTeam</code></pre>
         </li>
         <li>
-          <strong>Configure</strong>
-          <p>Edit <code>config\config.yaml</code> (copied from the example). Set tenant domain. For live user/admin profiles, set <code>client_id</code> and flip <code>demo_mode</code> to <code>false</code>.</p>
+          <strong>Setup, then start</strong>
+          <pre><code>.\scripts\setup-windows.ps1
+.\scripts\run-assessment.ps1</code></pre>
+          <p>Browser opens at <code>http://localhost:8501</code>. Run the scripts <strong>directly</strong> — do not wrap them with <code>powershell -File</code>.</p>
         </li>
         <li>
-          <strong>Launch the dashboard</strong>
-          <pre><code>.\scripts\run-assessment.ps1
-:: or
-streamlit run app\streamlit_app.py</code></pre>
-        </li>
-        <li>
-          <strong>Optional PowerShell probes</strong>
-          <pre><code>.\powershell\Invoke-M365ControlChecks.ps1 -TenantDomain contoso.onmicrosoft.com -Profile external</code></pre>
+          <strong>If a script is blocked</strong>
+          <pre><code>Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+.\scripts\setup-windows.ps1</code></pre>
         </li>
       </ol>
+      <p>Full troubleshooting: <a href="https://github.com/vladjoh/RedTeam/blob/main/SETUP-WINDOWS.md">SETUP-WINDOWS.md</a></p>
       <div class="notice">
         <strong>Authorization required.</strong> This tool is for defensive security assessments with explicit written permission.
         Do not point it at tenants you do not own or are not contracted to test.
