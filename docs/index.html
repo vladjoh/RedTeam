@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>M365 Red Team — Microsoft 365 Attack-Path Assessment</title>
+  <meta name="description" content="Authorized Microsoft 365 red team assessment tool. External, compromised user, and compromised admin perspectives. Runs locally on Windows." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="atmosphere" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="logo" href="#top">M365 Red Team</a>
+    <nav>
+      <a href="#profiles">Profiles</a>
+      <a href="#how">How it works</a>
+      <a href="#stack">Stack</a>
+      <a href="#install">Install</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="brand-mark">M365 Red Team</p>
+        <h1>See how far an attacker can go in your Microsoft tenant</h1>
+        <p class="lede">
+          A Windows-local assessment tool that simulates external, user, and admin compromise —
+          then shows which security barriers stop the attack.
+        </p>
+        <div class="cta-row">
+          <a class="btn primary" href="#install">Run on Windows</a>
+          <a class="btn ghost" href="https://github.com/vladjoh/RedTeam">View repository</a>
+        </div>
+      </div>
+      <div class="hero-visual" role="img" aria-label="Abstract map of Microsoft 365 attack paths across identity, apps, and collaboration">
+        <div class="viz-grid">
+          <span class="node n1">External</span>
+          <span class="node n2">Identity</span>
+          <span class="node n3">OAuth</span>
+          <span class="node n4">Admin</span>
+          <span class="node n5">Barrier</span>
+          <svg class="viz-lines" viewBox="0 0 400 320" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M70 60 C140 80, 160 120, 200 140" />
+            <path d="M200 140 C260 160, 300 120, 330 90" />
+            <path d="M200 140 C180 200, 120 230, 90 260" />
+            <path d="M200 140 C240 210, 280 240, 320 270" />
+            <circle cx="200" cy="140" r="6" />
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section id="profiles" class="section">
+      <h2>Three attack profiles</h2>
+      <p class="section-lede">One assessment surface, three adversary perspectives.</p>
+      <div class="profile-rows">
+        <article class="profile">
+          <h3>1. External Attacker</h3>
+          <p>No login. Map exposed services, identities, domains, and possible entry paths using public Microsoft endpoints and DNS.</p>
+        </article>
+        <article class="profile">
+          <h3>2. Compromised User</h3>
+          <p>Standard user account. Inspect access to apps, data, groups, SharePoint, Teams, and privilege-escalation opportunities.</p>
+        </article>
+        <article class="profile">
+          <h3>3. Compromised Admin</h3>
+          <p>Administrator compromised. Review privileges, app control, tenant configuration, and the blast radius of admin takeover.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="how" class="section section-alt">
+      <h2>How the tool works</h2>
+      <p class="section-lede">Manual execution from a Streamlit dashboard on your workstation.</p>
+      <div class="dashboard-mock" aria-label="Conceptual dashboard layout">
+        <div class="mock-top">
+          <strong>M365 Red Team</strong>
+          <span class="mock-badge">Manual execution</span>
+        </div>
+        <div class="mock-body">
+          <aside>
+            <label>Target tenant</label>
+            <div class="mock-input">customer.onmicrosoft.com</div>
+            <p class="mock-hint">Example tenant — not a live connection</p>
+            <label>Attack profile</label>
+            <ul class="mock-profiles">
+              <li>External</li>
+              <li class="on">User</li>
+              <li>Admin</li>
+            </ul>
+            <label>Test categories</label>
+            <ul class="mock-cats">
+              <li>✓ Attack surface discovery</li>
+              <li>✓ Identity security</li>
+              <li>✓ MFA / Conditional Access</li>
+              <li>✓ OAuth / Enterprise Applications</li>
+              <li>✓ Privilege escalation paths</li>
+              <li>✓ SharePoint / Exchange / Teams</li>
+              <li>✓ Lateral movement analysis</li>
+              <li>✓ Persistence risk assessment</li>
+            </ul>
+            <div class="mock-cta">Start Red Team Assessment</div>
+          </aside>
+          <div class="mock-main">
+            <p>Conceptual dashboard — no tenant is connected until you disable demo mode and authenticate.</p>
+            <p class="muted">Graph maps and validates many controls. Separate modules cover external services and authentication flows Graph cannot exercise alone.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stack" class="section">
+      <h2>Technology</h2>
+      <p class="section-lede">Built for controlled, read-only assessment runs on Windows.</p>
+      <ul class="tech-list">
+        <li><strong>Python</strong> — assessment engine</li>
+        <li><strong>Microsoft Graph API</strong> — tenant data mapping</li>
+        <li><strong>MSAL</strong> — authentication (device code / app)</li>
+        <li><strong>PowerShell</strong> — selected M365 control probes</li>
+        <li><strong>Streamlit</strong> — local web dashboard</li>
+        <li><strong>OpenAI API</strong> — optional attack-path narrative</li>
+        <li><strong>HTML / PDF</strong> — reporting</li>
+      </ul>
+    </section>
+
+    <section id="install" class="section section-alt">
+      <h2>Use it on Windows</h2>
+      <p class="section-lede">Authorized tenants only. Keep demo mode on until you have written approval.</p>
+      <ol class="steps">
+        <li>
+          <strong>Prerequisites</strong>
+          <p>Windows 10/11, Python 3.11+, PowerShell 5.1+, and (for live runs) an Entra ID app registration with least-privilege Graph permissions.</p>
+        </li>
+        <li>
+          <strong>Clone and setup</strong>
+          <pre><code>git clone https://github.com/vladjoh/RedTeam.git
+cd RedTeam
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-windows.ps1</code></pre>
+        </li>
+        <li>
+          <strong>Configure</strong>
+          <p>Edit <code>config\config.yaml</code> (copied from the example). Set tenant domain. For live user/admin profiles, set <code>client_id</code> and flip <code>demo_mode</code> to <code>false</code>.</p>
+        </li>
+        <li>
+          <strong>Launch the dashboard</strong>
+          <pre><code>.\scripts\run-assessment.ps1
+:: or
+streamlit run app\streamlit_app.py</code></pre>
+        </li>
+        <li>
+          <strong>Optional PowerShell probes</strong>
+          <pre><code>.\powershell\Invoke-M365ControlChecks.ps1 -TenantDomain contoso.onmicrosoft.com -Profile external</code></pre>
+        </li>
+      </ol>
+      <div class="notice">
+        <strong>Authorization required.</strong> This tool is for defensive security assessments with explicit written permission.
+        Do not point it at tenants you do not own or are not contracted to test.
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p><span class="logo">M365 Red Team</span> — local Windows assessment toolkit.</p>
+    <p><a href="https://github.com/vladjoh/RedTeam">GitHub</a></p>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
