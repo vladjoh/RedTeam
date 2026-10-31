@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>M365 Red Team Assessment — {{ result.tenant_domain }}</title>
+  <style>
+    :root {
+      --ink: #15202b;
+      --muted: #5b6b7c;
+      --line: #d7dee7;
+      --accent: #0f7a6a;
+      --critical: #b42318;
+      --high: #c4320a;
+      --medium: #b54708;
+      --low: #175cd3;
+      --info: #475467;
+      --pass: #027a48;
+      --bg: #f6f8fa;
+    }
+    body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); margin: 0; background: var(--bg); }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    header { border-bottom: 3px solid var(--accent); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    h1 { font-size: 1.75rem; margin: 0 0 0.35rem; letter-spacing: -0.02em; }
+    .meta { color: var(--muted); font-size: 0.95rem; }
+    .summary { background: #fff; border: 1px solid var(--line); padding: 1rem 1.15rem; margin: 1.25rem 0; }
+    .counts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.5rem; }
+    .chip { font-size: 0.8rem; padding: 0.25rem 0.55rem; border: 1px solid var(--line); background: #fff; }
+    .finding { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--info); padding: 0.9rem 1rem; margin-bottom: 0.75rem; }
+    .finding.critical { border-left-color: var(--critical); }
+    .finding.high { border-left-color: var(--high); }
+    .finding.medium { border-left-color: var(--medium); }
+    .finding.low { border-left-color: var(--low); }
+    .finding.pass { border-left-color: var(--pass); }
+    .sev { text-transform: uppercase; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; }
+    h3 { margin: 0.2rem 0 0.45rem; font-size: 1.05rem; }
+    .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 0.55rem; }
+    footer { margin-top: 2rem; font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.75rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>M365 Red Team Assessment</h1>
+      <div class="meta">
+        Tenant: <strong>{{ result.tenant_domain }}</strong> ·
+        Profile: <strong>{{ result.profile.label }}</strong> ·
+        Run: {{ result.run_id }} ·
+        {% if result.demo_mode %}Demo mode{% else %}Live probe{% endif %}
+      </div>
+    </header>
+
+    <section class="summary">
+      <h2>Attack-path narrative</h2>
+      <p>{{ result.ai_summary or "No summary generated." }}</p>
+    </section>
+
+    <div class="counts">
+      {% for sev, n in result.severity_counts().items() %}
+        {% if n %}<span class="chip">{{ sev }}: {{ n }}</span>{% endif %}
+      {% endfor %}
+    </div>
+
+    <h2>Findings</h2>
+    {% for f in result.findings %}
+      <article class="finding {{ f.severity.value }}">
+        <div class="sev">{{ f.severity.value }} · {{ f.category.label }}</div>
+        <h3>{{ f.title }}</h3>
+        <p>{{ f.description }}</p>
+        {% if f.attack_path %}
+          <div class="label">Attack path</div>
+          <div>{{ f.attack_path }}</div>
+        {% endif %}
+        {% if f.barrier %}
+          <div class="label">Security barrier</div>
+          <div>{{ f.barrier }}</div>
+        {% endif %}
+        {% if f.remediation %}
+          <div class="label">Remediation</div>
+          <div>{{ f.remediation }}</div>
+        {% endif %}
+      </article>
+    {% endfor %}
+
+    <footer>
+      Authorized use only. {{ org }} · Generated {{ generated_at }}.
+      Graph mapping validates many controls; controlled external modules cover auth-flow edge cases Graph cannot exercise alone.
+    </footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+# Copy to config.yaml and fill in values for your authorized assessment.
+# Never commit real secrets.
+
+tenant:
+  # Target tenant domain (e.g. contoso.onmicrosoft.com)
+  domain: "customer.onmicrosoft.com"
+  # Azure AD / Entra ID tenant ID (GUID) — optional for external-only scans
+  tenant_id: ""
+
+auth:
+  # Public client (device code / interactive) for user or admin profiles
+  client_id: ""
+  # Optional confidential client for app-only Graph (admin consent required)
+  client_secret: ""
+  authority: "https://login.microsoftonline.com"
+  scopes:
+    - "https://graph.microsoft.com/.default"
+
+openai:
+  # Optional — used for AI attack-path narrative in reports
+  api_key: ""
+  model: "gpt-4o-mini"
+  enabled: false
+
+assessment:
+  # Default profile: external | user | admin
+  default_profile: "external"
+  categories:
+    - attack_surface
+    - identity_security
+    - mfa_conditional_access
+    - oauth_enterprise_apps
+    - privilege_escalation
+    - sharepoint_exchange_teams
+    - lateral_movement
+    - persistence_risk
+  # Safe defaults: read-only Graph probes; no destructive actions
+  read_only: true
+  demo_mode: true
+
+reporting:
+  output_dir: "output/reports"
+  formats:
+    - html
+    - pdf
+  organization: "Authorized Red Team Assessment"
