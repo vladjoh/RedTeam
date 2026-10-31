@@ -94,9 +94,24 @@ if ((-not (Test-Path '.\.env')) -and (Test-Path '.\.env.example')) {
 
 New-Item -ItemType Directory -Force -Path '.\output\reports' | Out-Null
 
+# Pre-skip Streamlit welcome/email prompt so the server does not exit on first run.
+New-Item -ItemType Directory -Force -Path '.\.streamlit' | Out-Null
+$userStreamlit = Join-Path $env:USERPROFILE '.streamlit'
+New-Item -ItemType Directory -Force -Path $userStreamlit | Out-Null
+$credBody = "[general]`r`nemail = `"`"`r`n"
+foreach ($credPath in @(
+        (Join-Path $Root '.streamlit\credentials.toml'),
+        (Join-Path $userStreamlit 'credentials.toml')
+    )) {
+    if (-not (Test-Path -LiteralPath $credPath)) {
+        Set-Content -LiteralPath $credPath -Value $credBody -Encoding Ascii
+    }
+}
+
 Write-Host ''
 Write-Host 'Setup complete.' -ForegroundColor Green
 Write-Host 'Next step - start the dashboard:'
 Write-Host '  .\scripts\run-assessment.ps1'
+Write-Host 'Leave that window open, then browse to http://localhost:8501'
 Write-Host ''
 Write-Host 'Authorized assessments only. Keep demo_mode: true until you have written approval.' -ForegroundColor Yellow
