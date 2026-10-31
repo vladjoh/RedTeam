@@ -66,7 +66,9 @@ Then run setup again.
 
 Double-click `scripts\run-assessment.cmd`
 
-Your browser should open **http://localhost:8501**.
+**Keep that window open.** When it works you should see a line like `You can now view your Streamlit app in your browser` and the prompt should **not** return.
+
+Then open **http://localhost:8501**.
 
 You are in **demo mode** by default (no real tenant connection). Click **Start Red Team Assessment**.
 
@@ -80,9 +82,11 @@ Press `Ctrl+C` in the PowerShell window.
 
 | Problem | Fix |
 | --- | --- |
+| `localhost refused to connect` / `ERR_CONNECTION_REFUSED` | The Streamlit window exited. Re-download latest scripts, run `.\scripts\setup-windows.ps1`, then `.\scripts\run-assessment.ps1` and **leave it open**. Do not press Enter at any email prompt. |
+| Streamlit asks for Email and then quits | Fixed in latest scripts (credentials are auto-created). Update the repo and re-run setup + run. |
 | `python` / `py` not found | Reinstall Python with "Add to PATH", open a **new** terminal |
-| `Unexpected token '}'` | You are on an old script copy, or used `powershell -File`. Pull/download latest and run `.\scripts\setup-windows.ps1` directly |
-| `streamlit` not recognized | Setup did not finish. Run `.\scripts\setup-windows.ps1` again, then `.\scripts\run-assessment.ps1` (do not call `streamlit` yourself) |
+| `Unexpected token '}'` | Old script copy. Download latest `main` and run `.\scripts\setup-windows.ps1` directly |
+| `streamlit` not recognized | Use `.\scripts\run-assessment.ps1` (not a bare `streamlit` command) |
 | Script blocked | `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | OneDrive path issues | Move the folder to e.g. `C:\Dev\RedTeam` and retry |
 
