@@ -66,11 +66,9 @@ Then run setup again.
 
 Double-click `scripts\run-assessment.cmd`
 
-**Keep that window open.** When it works you should see a line like `You can now view your Streamlit app in your browser` and the prompt should **not** return.
+**Keep that window open.** The script opens **http://localhost:8501** in your browser when the server is ready. The PowerShell prompt should **not** return while the dashboard is running.
 
-Then open **http://localhost:8501**.
-
-You are in **demo mode** by default (no real tenant connection). Click **Start Red Team Assessment**.
+For a quick external Entra scan: enter an **authorized** domain → choose **External Attacker** → **Start Red Team Assessment** → download the HTML report.
 
 ## 5. Stop
 

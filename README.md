@@ -1,8 +1,8 @@
 # M365 Red Team
 
-Authorized **Microsoft 365 red team assessment** toolkit for Windows. Simulate how an attacker can compromise a Microsoft tenant, how far they can get, and which security barriers stop them.
+Authorized **Microsoft 365 / Entra red team assessment** toolkit for Windows. Start with a fast **external Entra domain scan** (public endpoints, usually a few seconds), then optionally assess compromised-user and admin perspectives.
 
-> **Authorized use only.** Default config uses **demo mode** (no live tenant).
+> **Authorized use only.** Get written permission, tell the tenant owner you are scanning, and verify findings before changing controls. External signals are also visible to attackers.
 
 **Docs site:** https://vladjoh.github.io/RedTeam/
 

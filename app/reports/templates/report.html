@@ -2,67 +2,166 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>M365 Red Team Assessment — {{ result.tenant_domain }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>M365 Red Team — {{ result.tenant_domain }}</title>
   <style>
     :root {
-      --ink: #15202b;
-      --muted: #5b6b7c;
-      --line: #d7dee7;
-      --accent: #0f7a6a;
+      --ink: #122018;
+      --muted: #5a6a63;
+      --line: #d5e0da;
+      --paper: #f3f7f5;
+      --panel: #ffffff;
+      --accent: #0f7a5a;
+      --accent-deep: #0b3d36;
       --critical: #b42318;
       --high: #c4320a;
       --medium: #b54708;
       --low: #175cd3;
       --info: #475467;
       --pass: #027a48;
-      --bg: #f6f8fa;
+      --signal: #c45f1a;
+      --font: "Segoe UI", "IBM Plex Sans", system-ui, sans-serif;
+      --display: "Segoe UI Semibold", "Sora", system-ui, sans-serif;
     }
-    body { font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); margin: 0; background: var(--bg); }
-    .wrap { max-width: 920px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
-    header { border-bottom: 3px solid var(--accent); padding-bottom: 1rem; margin-bottom: 1.5rem; }
-    h1 { font-size: 1.75rem; margin: 0 0 0.35rem; letter-spacing: -0.02em; }
-    .meta { color: var(--muted); font-size: 0.95rem; }
-    .summary { background: #fff; border: 1px solid var(--line); padding: 1rem 1.15rem; margin: 1.25rem 0; }
-    .counts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.5rem; }
-    .chip { font-size: 0.8rem; padding: 0.25rem 0.55rem; border: 1px solid var(--line); background: #fff; }
-    .finding { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--info); padding: 0.9rem 1rem; margin-bottom: 0.75rem; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--paper); line-height: 1.5; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; }
+    .mast {
+      background: linear-gradient(135deg, #0b3d36 0%, #145c4c 55%, #1a6b4f 100%);
+      color: #eef6f2;
+      padding: 1.6rem 1.4rem 1.35rem;
+      margin: -2rem -1.25rem 1.5rem;
+    }
+    .mast-inner { max-width: 980px; margin: 0 auto; }
+    .brand { font-family: var(--display); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
+    h1 { font-family: var(--display); font-size: 1.85rem; margin: 0.35rem 0 0.4rem; letter-spacing: -0.03em; }
+    .meta { opacity: 0.9; font-size: 0.92rem; }
+    .auth-banner {
+      margin: 0 0 1.25rem;
+      padding: 0.75rem 0.9rem;
+      border-left: 3px solid var(--signal);
+      background: rgba(196, 95, 26, 0.1);
+      font-size: 0.9rem;
+    }
+    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.55rem; margin: 1rem 0 1.4rem; }
+    .stat { background: var(--panel); border: 1px solid var(--line); padding: 0.7rem 0.8rem; }
+    .stat b { display: block; font-size: 1.35rem; font-family: var(--display); }
+    .stat span { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .panel { background: var(--panel); border: 1px solid var(--line); padding: 1rem 1.1rem; margin-bottom: 1rem; }
+    .panel h2 { font-family: var(--display); font-size: 1.15rem; margin: 0 0 0.55rem; color: var(--accent-deep); }
+    .fingerprint { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.65rem; font-size: 0.9rem; }
+    .fingerprint div { border-top: 1px solid var(--line); padding-top: 0.4rem; }
+    .fingerprint label { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .chain { border-left: 3px solid var(--accent); padding: 0.55rem 0 0.55rem 0.85rem; margin: 0.65rem 0; }
+    .chain h3 { margin: 0 0 0.25rem; font-size: 1rem; font-family: var(--display); }
+    .chain .meta-line { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .chain ol { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.75rem 0 1rem; }
+    .toolbar button, .toolbar input {
+      font: inherit; border: 1px solid var(--line); background: #fff; padding: 0.35rem 0.6rem; cursor: pointer;
+    }
+    .toolbar button.active { background: var(--accent-deep); color: #fff; border-color: var(--accent-deep); }
+    .toolbar input { min-width: 180px; cursor: text; }
+    .finding { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--info); padding: 0.85rem 1rem; margin-bottom: 0.65rem; }
     .finding.critical { border-left-color: var(--critical); }
     .finding.high { border-left-color: var(--high); }
     .finding.medium { border-left-color: var(--medium); }
     .finding.low { border-left-color: var(--low); }
+    .finding.info { border-left-color: var(--info); }
     .finding.pass { border-left-color: var(--pass); }
-    .sev { text-transform: uppercase; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; }
-    h3 { margin: 0.2rem 0 0.45rem; font-size: 1.05rem; }
-    .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 0.55rem; }
-    footer { margin-top: 2rem; font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.75rem; }
+    .finding.hidden { display: none; }
+    .sev { text-transform: uppercase; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
+    .finding h3 { margin: 0.15rem 0 0.4rem; font-size: 1.02rem; font-family: var(--display); }
+    .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.5rem; }
+    details.evidence { margin-top: 0.45rem; font-size: 0.85rem; }
+    details.evidence pre { background: #122018; color: #d7ebe2; padding: 0.65rem; overflow: auto; font-size: 0.75rem; }
+    footer { margin-top: 2rem; font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.85rem; }
+    @media print {
+      .toolbar, .auth-banner { display: none !important; }
+      .mast { margin: 0 0 1rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .finding { break-inside: avoid; }
+      body { background: #fff; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>M365 Red Team Assessment</h1>
+  <div class="mast">
+    <div class="mast-inner">
+      <div class="brand">M365 Red Team</div>
+      <h1>External Entra assessment report</h1>
       <div class="meta">
-        Tenant: <strong>{{ result.tenant_domain }}</strong> ·
-        Profile: <strong>{{ result.profile.label }}</strong> ·
-        Run: {{ result.run_id }} ·
-        {% if result.demo_mode %}Demo mode{% else %}Live probe{% endif %}
+        Tenant <strong>{{ result.tenant_domain }}</strong>
+        · Profile <strong>{{ result.profile.label }}</strong>
+        · Run {{ result.run_id }}
+        · {{ generated_at }}
+        {% if result.demo_mode %}· Demo flag on (external probes still use public endpoints){% endif %}
       </div>
-    </header>
+    </div>
+  </div>
 
-    <section class="summary">
-      <h2>Attack-path narrative</h2>
+  <div class="wrap">
+    <div class="auth-banner">
+      <strong>Authorized use only.</strong> Confirm you have written permission for this tenant.
+      Public signals in this report are also visible to attackers — verify findings on the target before you change controls, and notify stakeholders when you scan.
+    </div>
+
+    {% set counts = result.severity_counts() %}
+    <div class="grid-stats">
+      <div class="stat"><b>{{ result.findings|length }}</b><span>Findings</span></div>
+      <div class="stat"><b>{{ counts.get('critical', 0) + counts.get('high', 0) }}</b><span>Critical / High</span></div>
+      <div class="stat"><b>{{ counts.get('medium', 0) }}</b><span>Medium</span></div>
+      <div class="stat"><b>{{ counts.get('pass', 0) }}</b><span>Barriers / Pass</span></div>
+      <div class="stat"><b>{{ chains|length }}</b><span>Attack chains</span></div>
+    </div>
+
+    {% if fingerprint %}
+    <section class="panel">
+      <h2>Tenant fingerprint</h2>
+      <div class="fingerprint">
+        <div><label>Domain</label>{{ fingerprint.get('input_domain', result.tenant_domain) }}</div>
+        <div><label>Tenant ID</label>{{ fingerprint.get('tenant_id', '—') }}</div>
+        <div><label>Region</label>{{ fingerprint.get('region', '—') }}</div>
+        <div><label>Namespace</label>{{ fingerprint.get('namespace_type', '—') }}</div>
+        <div><label>Federation brand</label>{{ fingerprint.get('federation_brand', '—') }}</div>
+        <div><label>Mail domain</label>{{ fingerprint.get('mail_domain', '—') }}</div>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <h2>Executive narrative</h2>
       <p>{{ result.ai_summary or "No summary generated." }}</p>
     </section>
 
-    <div class="counts">
-      {% for sev, n in result.severity_counts().items() %}
-        {% if n %}<span class="chip">{{ sev }}: {{ n }}</span>{% endif %}
+    <section class="panel">
+      <h2>Likely attack chains</h2>
+      {% for c in chains %}
+        <div class="chain">
+          <h3>{{ c.name }}</h3>
+          <div class="meta-line">Effort: {{ c.effort }} · Blast radius: {{ c.blast_radius }} · Signal: {{ c.signal_strength }}</div>
+          <ol>
+            {% for step in c.steps %}<li>{{ step }}</li>{% endfor %}
+          </ol>
+        </div>
+      {% else %}
+        <p>No chains derived.</p>
       {% endfor %}
+    </section>
+
+    <h2 style="font-family:var(--display);color:var(--accent-deep);">Findings</h2>
+    <div class="toolbar" id="filters">
+      <button type="button" class="active" data-filter="all">All</button>
+      <button type="button" data-filter="critical">Critical</button>
+      <button type="button" data-filter="high">High</button>
+      <button type="button" data-filter="medium">Medium</button>
+      <button type="button" data-filter="low">Low</button>
+      <button type="button" data-filter="info">Info</button>
+      <button type="button" data-filter="pass">Pass</button>
+      <input id="search" type="search" placeholder="Filter findings…" />
     </div>
 
-    <h2>Findings</h2>
     {% for f in result.findings %}
-      <article class="finding {{ f.severity.value }}">
+      <article class="finding {{ f.severity.value }}" data-sev="{{ f.severity.value }}" data-text="{{ (f.title ~ ' ' ~ f.description ~ ' ' ~ f.category.label)|e }}">
         <div class="sev">{{ f.severity.value }} · {{ f.category.label }}</div>
         <h3>{{ f.title }}</h3>
         <p>{{ f.description }}</p>
@@ -78,13 +177,44 @@
           <div class="label">Remediation</div>
           <div>{{ f.remediation }}</div>
         {% endif %}
+        {% if f.evidence %}
+          <details class="evidence">
+            <summary>Evidence</summary>
+            <pre>{{ f.evidence | tojson(indent=2) }}</pre>
+          </details>
+        {% endif %}
       </article>
     {% endfor %}
 
     <footer>
-      Authorized use only. {{ org }} · Generated {{ generated_at }}.
-      Graph mapping validates many controls; controlled external modules cover auth-flow edge cases Graph cannot exercise alone.
+      {{ org }} · Generated {{ generated_at }}.
+      External modules use public Microsoft endpoints only (read-only).
+      Always verify results on the authorized target tenant before acting.
     </footer>
   </div>
+
+  <script>
+    (function () {
+      const buttons = document.querySelectorAll('#filters button');
+      const search = document.getElementById('search');
+      const cards = document.querySelectorAll('.finding');
+      let sev = 'all';
+      function apply() {
+        const q = (search.value || '').toLowerCase();
+        cards.forEach((el) => {
+          const okSev = sev === 'all' || el.dataset.sev === sev;
+          const okQ = !q || (el.dataset.text || '').toLowerCase().includes(q);
+          el.classList.toggle('hidden', !(okSev && okQ));
+        });
+      }
+      buttons.forEach((btn) => btn.addEventListener('click', () => {
+        buttons.forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        sev = btn.dataset.filter;
+        apply();
+      }));
+      search.addEventListener('input', apply);
+    })();
+  </script>
 </body>
 </html>
