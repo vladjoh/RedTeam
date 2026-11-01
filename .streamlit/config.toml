@@ -2,7 +2,7 @@
 developmentMode = false
 
 [server]
-headless = true
+headless = false
 port = 8501
 address = "localhost"
 enableCORS = false

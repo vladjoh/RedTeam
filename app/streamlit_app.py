@@ -5,7 +5,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-# Allow `streamlit run app/streamlit_app.py` from repo root
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -85,17 +84,18 @@ def main() -> None:
         "how far an attacker can get, and which barriers stop them.</p>",
         unsafe_allow_html=True,
     )
-
-    mode_label = "Demo mode — no live tenant connected" if settings.assessment.demo_mode else "Live assessment mode"
-    st.markdown(f'<span class="status-pill">{mode_label}</span>', unsafe_allow_html=True)
+    st.caption(
+        "Authorized tenants only. External scans hit public Entra endpoints in a few seconds. "
+        "Always tell stakeholders you are scanning, and verify findings before remediating."
+    )
 
     with st.sidebar:
         st.header("Execution")
-        st.caption("Manual run on this Windows workstation.")
+        st.caption("Runs locally on this workstation.")
         tenant = st.text_input(
             "TARGET TENANT",
             value=settings.tenant.domain,
-            help="Example tenant domain — not necessarily connected.",
+            help="Entra domain, e.g. contoso.com or contoso.onmicrosoft.com",
         )
         settings.tenant.domain = tenant.strip() or settings.tenant.domain
 
@@ -103,9 +103,7 @@ def main() -> None:
             "Attack profile",
             options=[p.value for p in AttackProfile],
             format_func=lambda v: AttackProfile(v).label,
-            index=[p.value for p in AttackProfile].index(settings.assessment.default_profile)
-            if settings.assessment.default_profile in {p.value for p in AttackProfile}
-            else 0,
+            index=0,
         )
         profile = AttackProfile(profile_key)
         st.info(profile.description)
@@ -113,19 +111,45 @@ def main() -> None:
         st.subheader("Test categories")
         selected: list[AssessmentCategory] = []
         for cat in AssessmentCategory:
-            default_on = cat.value in settings.assessment.categories or not settings.assessment.categories
-            if st.checkbox(cat.label, value=default_on, key=f"cat_{cat.value}"):
+            # External profile: default to attack surface (+ identity label unused live)
+            if profile == AttackProfile.EXTERNAL:
+                default_on = cat in {
+                    AssessmentCategory.ATTACK_SURFACE,
+                    AssessmentCategory.IDENTITY_SECURITY,
+                    AssessmentCategory.MFA_CONDITIONAL_ACCESS,
+                    AssessmentCategory.OAUTH_ENTERPRISE_APPS,
+                }
+            else:
+                default_on = cat.value in settings.assessment.categories or not settings.assessment.categories
+            if st.checkbox(cat.label, value=default_on, key=f"cat_{cat.value}_{profile.value}"):
                 selected.append(cat)
 
-        demo = st.toggle("Demo mode", value=settings.assessment.demo_mode)
+        demo = st.toggle(
+            "Demo mode (Graph)",
+            value=settings.assessment.demo_mode,
+            help="Affects User/Admin Graph calls. External Entra probes always use live public endpoints.",
+        )
         settings.assessment.demo_mode = demo
 
-        authenticate = st.button(
-            "Authenticate (MSAL)",
-            disabled=demo or profile == AttackProfile.EXTERNAL,
-            use_container_width=True,
-        )
+        if profile == AttackProfile.EXTERNAL:
+            st.success("External: live public Entra recon (no login). Usually finishes in seconds.")
+        else:
+            authenticate = st.button(
+                "Authenticate (MSAL)",
+                disabled=demo,
+                use_container_width=True,
+            )
+        if profile == AttackProfile.EXTERNAL:
+            authenticate = False
+
         start = st.button("Start Red Team Assessment", type="primary", use_container_width=True)
+
+    mode_label = (
+        "External live recon (public endpoints)"
+        if profile == AttackProfile.EXTERNAL
+        else ("Demo mode — Graph simulated" if demo else "Live Graph assessment")
+    )
+    st.markdown(f'<span class="status-pill">{mode_label}</span>', unsafe_allow_html=True)
 
     col_a, col_b, col_c = st.columns(3)
     col_a.metric("Profile", profile.label)
@@ -176,14 +200,13 @@ def main() -> None:
     if not result:
         st.markdown(
             """
-            ### Conceptual dashboard — no assessment run yet
-            1. Set the target tenant domain  
-            2. Choose **External**, **User**, or **Admin**  
-            3. Select categories  
-            4. Click **Start Red Team Assessment**  
+            ### Ready when you are
+            1. Enter an **authorized** target domain  
+            2. Choose **External** for a fast Entra footprint scan (no login)  
+            3. Click **Start Red Team Assessment**  
+            4. Download the HTML report — filter findings and review attack chains  
 
-            Graph maps and validates many controls; separate external modules cover
-            auth-flow and exposure checks Graph cannot exercise alone.
+            Tell the tenant owner you are scanning. Attackers can query the same public signals.
             """
         )
         return
@@ -198,6 +221,15 @@ def main() -> None:
 
     st.subheader("Attack-path narrative")
     st.write(result.ai_summary)
+
+    chains = result.metadata.get("attack_chains") or []
+    if chains:
+        st.subheader("Likely attack chains")
+        for c in chains:
+            with st.expander(f"{c['name']} · {c['effort']}", expanded=False):
+                st.write(f"Blast radius: {c['blast_radius']}")
+                for step in c["steps"]:
+                    st.write(f"- {step}")
 
     st.subheader("Findings")
     for f in result.findings:
@@ -235,6 +267,7 @@ def main() -> None:
                     data=Path(path).read_text(encoding="utf-8"),
                     file_name=Path(path).name,
                     mime="text/html",
+                    key=f"dl_{Path(path).name}",
                 )
 
 

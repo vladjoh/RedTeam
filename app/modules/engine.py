@@ -5,6 +5,7 @@ from __future__ import annotations
 from app.auth.msal_auth import GraphAuthSession
 from app.core.config import Settings
 from app.core.models import AssessmentCategory, AssessmentResult, AttackProfile
+from app.modules.attack_chains import build_attack_chains
 from app.modules.attack_surface import AttackSurfaceModule
 from app.modules.collaboration import CollaborationModule
 from app.modules.identity import IdentitySecurityModule
@@ -59,5 +60,6 @@ class AssessmentEngine:
             findings = module.run(profile)
             result.findings.extend(findings)
 
+        result.metadata["attack_chains"] = build_attack_chains(result)
         result.mark_finished()
         return result

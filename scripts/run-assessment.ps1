@@ -2,6 +2,7 @@
 <#
 .SYNOPSIS
   Launch the Streamlit dashboard on Windows using the local .venv.
+  Opens http://localhost:8501 automatically.
 #>
 [CmdletBinding()]
 param(
@@ -14,6 +15,7 @@ Set-Location -LiteralPath $Root
 
 $venvPython = Join-Path $Root '.venv\Scripts\python.exe'
 $appPath = Join-Path $Root 'app\streamlit_app.py'
+$url = "http://localhost:$Port"
 
 if (-not (Test-Path -LiteralPath $venvPython)) {
     Write-Host 'No virtual environment found.' -ForegroundColor Yellow
@@ -27,45 +29,46 @@ if (-not (Test-Path -LiteralPath $appPath)) {
     exit 1
 }
 
-# Skip Streamlit first-run email prompt (this is what was killing the server).
+# Skip Streamlit first-run email prompt.
 $streamlitDir = Join-Path $Root '.streamlit'
 $userStreamlit = Join-Path $env:USERPROFILE '.streamlit'
 New-Item -ItemType Directory -Force -Path $streamlitDir | Out-Null
 New-Item -ItemType Directory -Force -Path $userStreamlit | Out-Null
 
-$credProject = Join-Path $streamlitDir 'credentials.toml'
-$credUser = Join-Path $userStreamlit 'credentials.toml'
 $credBody = "[general]`r`nemail = `"`"`r`n"
-if (-not (Test-Path -LiteralPath $credProject)) {
-    Set-Content -LiteralPath $credProject -Value $credBody -Encoding Ascii
-}
-if (-not (Test-Path -LiteralPath $credUser)) {
-    Set-Content -LiteralPath $credUser -Value $credBody -Encoding Ascii
-}
-
-$configProject = Join-Path $streamlitDir 'config.toml'
-if (-not (Test-Path -LiteralPath $configProject)) {
-    $cfg = @(
-        '[server]'
-        'headless = true'
-        ("port = {0}" -f $Port)
-        'address = "localhost"'
-        '[browser]'
-        'gatherUsageStats = false'
-    ) -join "`r`n"
-    Set-Content -LiteralPath $configProject -Value $cfg -Encoding Ascii
+foreach ($credPath in @(
+        (Join-Path $streamlitDir 'credentials.toml'),
+        (Join-Path $userStreamlit 'credentials.toml')
+    )) {
+    if (-not (Test-Path -LiteralPath $credPath)) {
+        Set-Content -LiteralPath $credPath -Value $credBody -Encoding Ascii
+    }
 }
 
 $env:STREAMLIT_BROWSER_GATHER_USAGE_STATS = 'false'
-$env:STREAMLIT_SERVER_HEADLESS = 'true'
+
+# Open the browser once the port accepts connections (backup if Streamlit does not).
+$opener = @"
+`$url = '$url'
+for (`$i = 0; `$i -lt 40; `$i++) {
+  try {
+    `$r = Invoke-WebRequest -Uri `$url -UseBasicParsing -TimeoutSec 2
+    if (`$r.StatusCode -ge 200) { Start-Process `$url; break }
+  } catch {
+    Start-Sleep -Milliseconds 500
+  }
+}
+"@
+$openerPath = Join-Path $env:TEMP 'm365-redteam-open-browser.ps1'
+Set-Content -LiteralPath $openerPath -Value $opener -Encoding Ascii
+Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $openerPath) -WindowStyle Hidden
 
 Write-Host 'Starting M365 Red Team dashboard...' -ForegroundColor Cyan
-Write-Host ("URL: http://localhost:{0}" -f $Port)
+Write-Host ("Opening browser at {0} when ready." -f $url)
 Write-Host 'Leave this window open. Press Ctrl+C to stop.'
 Write-Host ''
 
 & $venvPython -m streamlit run $appPath `
-    --server.headless true `
     --server.port $Port `
     --server.address localhost `
     --browser.gatherUsageStats false

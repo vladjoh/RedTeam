@@ -12,7 +12,10 @@ class IdentitySecurityModule(AssessmentModule):
     supported_profiles = {AttackProfile.EXTERNAL, AttackProfile.USER, AttackProfile.ADMIN}
 
     def run(self, profile: AttackProfile) -> list:
-        if self.settings.assessment.demo_mode or profile == AttackProfile.EXTERNAL:
+        # External identity signals come from the live Entra recon module.
+        if profile == AttackProfile.EXTERNAL:
+            return []
+        if self.settings.assessment.demo_mode:
             return demo_findings(profile, [self.category], self.tenant)
 
         findings = []

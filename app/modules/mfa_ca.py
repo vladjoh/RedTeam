@@ -12,7 +12,9 @@ class MfaConditionalAccessModule(AssessmentModule):
     supported_profiles = {AttackProfile.EXTERNAL, AttackProfile.USER, AttackProfile.ADMIN}
 
     def run(self, profile: AttackProfile) -> list:
-        if self.settings.assessment.demo_mode or profile == AttackProfile.EXTERNAL:
+        if profile == AttackProfile.EXTERNAL:
+            return []
+        if self.settings.assessment.demo_mode:
             return demo_findings(profile, [self.category], self.tenant)
 
         findings = []

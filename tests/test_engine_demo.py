@@ -51,4 +51,5 @@ def test_heuristic_summary_and_html_report(tmp_path):
     paths = ReportGenerator(settings).write(result)
     assert paths["html"].exists()
     html = paths["html"].read_text(encoding="utf-8")
-    assert "M365 Red Team Assessment" in html
+    assert "M365 Red Team" in html
+    assert "Authorized use only" in html

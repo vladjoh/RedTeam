@@ -1,15 +1,11 @@
 (() => {
   const header = document.querySelector(".site-header");
-  if (!header) return;
+  if (header) {
+    const onScroll = () => header.classList.toggle("is-scrolled", window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
 
-  const onScroll = () => {
-    header.classList.toggle("is-scrolled", window.scrollY > 12);
-  };
-
-  onScroll();
-  window.addEventListener("scroll", onScroll, { passive: true });
-
-  // Reveal sections on enter viewport
   const sections = document.querySelectorAll(".section");
   if ("IntersectionObserver" in window) {
     const io = new IntersectionObserver(
