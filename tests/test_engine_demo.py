@@ -1,55 +1,69 @@
-"""Smoke tests for demo-mode assessment engine."""
+"""Smoke tests for external-only engine."""
 
 from app.auth.msal_auth import GraphAuthSession
 from app.core.config import Settings
-from app.core.models import AssessmentCategory, AttackProfile
+from app.core.models import AttackProfile
+from app.modules.attack_chains import build_likelihood_briefing
 from app.modules.engine import AssessmentEngine
 from app.ai.analyzer import AttackPathAnalyzer
 from app.reports.generator import ReportGenerator
+from app.core.models import AssessmentCategory, AssessmentResult, Finding, Likelihood, Severity
 
 
-def _engine() -> AssessmentEngine:
+def test_likelihood_briefing_and_report(tmp_path):
     settings = Settings()
-    settings.assessment.demo_mode = True
-    settings.tenant.domain = "customer.onmicrosoft.com"
-    session = GraphAuthSession(settings=settings, profile=AttackProfile.EXTERNAL)
-    return AssessmentEngine(settings, session)
-
-
-def test_external_demo_run():
-    engine = _engine()
-    result = engine.run(
-        AttackProfile.EXTERNAL,
-        [AssessmentCategory.ATTACK_SURFACE, AssessmentCategory.IDENTITY_SECURITY],
-    )
-    assert result.demo_mode is True
-    assert len(result.findings) >= 1
-    assert result.profile == AttackProfile.EXTERNAL
-
-
-def test_user_and_admin_cover_categories():
-    settings = Settings()
-    settings.assessment.demo_mode = True
-    for profile in (AttackProfile.USER, AttackProfile.ADMIN):
-        session = GraphAuthSession(settings=settings, profile=profile)
-        engine = AssessmentEngine(settings, session)
-        result = engine.run(profile, list(AssessmentCategory))
-        assert result.findings
-        cats = {f.category for f in result.findings}
-        assert AssessmentCategory.PERSISTENCE_RISK in cats or profile == AttackProfile.USER
-
-
-def test_heuristic_summary_and_html_report(tmp_path):
-    settings = Settings()
-    settings.assessment.demo_mode = True
+    settings.tenant.domain = "example.com"
     settings.reporting.output_dir = str(tmp_path)
     settings.reporting.formats = ["html"]
-    session = GraphAuthSession(settings=settings, profile=AttackProfile.ADMIN)
-    result = AssessmentEngine(settings, session).run(AttackProfile.ADMIN)
+
+    findings = [
+        Finding(
+            category=AssessmentCategory.DNS_MAIL,
+            title="DMARC missing",
+            severity=Severity.HIGH,
+            description="No DMARC",
+            likelihood=Likelihood.MOST_LIKELY,
+            why="Spoofing path",
+            phase="dns_mail",
+        ),
+        Finding(
+            category=AssessmentCategory.IDENTITY_SECURITY,
+            title="GetCredentialType user-validation API is reachable",
+            severity=Severity.HIGH,
+            description="API ok",
+            likelihood=Likelihood.MOST_LIKELY,
+            why="User enum",
+            phase="user_enum",
+        ),
+        Finding(
+            category=AssessmentCategory.ATTACK_SURFACE,
+            title="Tenant fingerprint confirmed (OpenID)",
+            severity=Severity.INFO,
+            description="OIDC",
+            likelihood=Likelihood.LESS_LIKELY,
+            why="Expected",
+            phase="tenant",
+        ),
+    ]
+    result = AssessmentResult(
+        tenant_domain="example.com",
+        profile=AttackProfile.EXTERNAL,
+        categories=list(AssessmentCategory),
+        findings=findings,
+        demo_mode=False,
+    )
+    result.metadata["likelihood_briefing"] = build_likelihood_briefing(result)
     result.ai_summary = AttackPathAnalyzer(settings).summarize(result)
-    assert "Assessment profile" in result.ai_summary or len(result.ai_summary) > 20
+    assert "High" in result.ai_summary or "high" in result.ai_summary.lower()
     paths = ReportGenerator(settings).write(result)
-    assert paths["html"].exists()
     html = paths["html"].read_text(encoding="utf-8")
-    assert "M365 Red Team" in html
+    assert "HIGH" in html
+    assert "Most likely bypass" in html
     assert "Authorized use only" in html
+
+
+def test_engine_constructs():
+    settings = Settings()
+    settings.tenant.domain = "customer.onmicrosoft.com"
+    engine = AssessmentEngine(settings, GraphAuthSession(settings=settings))
+    assert engine.module is not None

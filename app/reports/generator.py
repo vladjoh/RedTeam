@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from app.core.config import Settings
 from app.core.models import AssessmentResult
-from app.modules.attack_chains import build_attack_chains
+from app.modules.attack_chains import build_attack_chains, build_likelihood_briefing
 
 
 class ReportGenerator:
@@ -33,11 +33,13 @@ class ReportGenerator:
     def render_html(self, result: AssessmentResult) -> str:
         template = self.env.get_template("report.html")
         chains = result.metadata.get("attack_chains") or build_attack_chains(result)
+        briefing = result.metadata.get("likelihood_briefing") or build_likelihood_briefing(result)
         return template.render(
             result=result,
             org=self.settings.reporting.organization,
             generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
             chains=chains,
+            briefing=briefing,
             fingerprint=self._fingerprint(result),
         )
 

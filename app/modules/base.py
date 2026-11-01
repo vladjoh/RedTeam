@@ -6,12 +6,18 @@ from abc import ABC, abstractmethod
 
 from app.auth.msal_auth import GraphAuthSession
 from app.core.config import Settings
-from app.core.models import AssessmentCategory, AttackProfile, Finding
+from app.core.models import (
+    AssessmentCategory,
+    AttackProfile,
+    Finding,
+    Likelihood,
+    Severity,
+)
 
 
 class AssessmentModule(ABC):
     category: AssessmentCategory
-    supported_profiles: set[AttackProfile]
+    supported_profiles: set[AttackProfile] = {AttackProfile.EXTERNAL}
 
     def __init__(self, settings: Settings, session: GraphAuthSession) -> None:
         self.settings = settings
@@ -29,16 +35,20 @@ class AssessmentModule(ABC):
         self,
         profile: AttackProfile,
         title: str,
-        severity,
+        severity: Severity,
         description: str,
         *,
         remediation: str = "",
         barrier: str = "",
         attack_path: str = "",
         evidence: dict | None = None,
+        likelihood: Likelihood = Likelihood.POSSIBLE,
+        why: str = "",
+        phase: str = "",
+        category: AssessmentCategory | None = None,
     ) -> Finding:
         return Finding(
-            category=self.category,
+            category=category or self.category,
             profile=profile,
             title=title,
             severity=severity,
@@ -47,4 +57,7 @@ class AssessmentModule(ABC):
             barrier=barrier,
             attack_path=attack_path,
             evidence=evidence or {},
+            likelihood=likelihood,
+            why=why,
+            phase=phase,
         )

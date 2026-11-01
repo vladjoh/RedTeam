@@ -36,7 +36,7 @@ class AssessmentSettings(BaseModel):
     default_profile: str = "external"
     categories: list[str] = Field(default_factory=list)
     read_only: bool = True
-    demo_mode: bool = True
+    demo_mode: bool = False
 
 
 class ReportingSettings(BaseModel):

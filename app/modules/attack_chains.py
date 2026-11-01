@@ -1,42 +1,77 @@
-"""Derive plain-English attack chains from findings (external-focused)."""
+"""Attack chains + likelihood briefing for external scans."""
 
 from __future__ import annotations
 
-from app.core.models import AssessmentResult, Severity
+from app.core.models import AssessmentResult, Likelihood, Severity
 
 
 def build_attack_chains(result: AssessmentResult) -> list[dict]:
-    titles = {f.title.lower() for f in result.findings}
     texts = " ".join(f.title + " " + f.description for f in result.findings).lower()
     chains: list[dict] = []
 
     def has(*needles: str) -> bool:
         return any(n in texts for n in needles)
 
-    if has("dmarc") and has("missing") or has("dmarc record missing"):
+    if has("dmarc missing") or (has("dmarc") and has("missing")):
         chains.append(
             {
-                "name": "Spoofed mail to credential harvest",
+                "name": "Spoofed mail → credential / BEC",
+                "likelihood": "Most likely",
                 "effort": "Low",
-                "blast_radius": "Credential theft, BEC",
+                "blast_radius": "Credential theft, invoice fraud",
+                "why": "Missing/weak DMARC lets attackers send mail that looks like it comes from you.",
                 "steps": [
-                    "Abuse weak/missing DMARC (and SPF) to spoof trusted senders",
-                    "Phish users or push device-code instructions",
-                    "Reuse harvested credentials against Entra / legacy protocols",
+                    "Spoof trusted sender addresses",
+                    "Phish credentials or device-code approvals",
+                    "Cash out via mailbox or finance fraud",
                 ],
             }
         )
 
-    if has("getcredentialtype") or has("user-existence"):
+    if has("getcredentialtype"):
         chains.append(
             {
-                "name": "Validated user list → password spray",
+                "name": "User validation → password spray",
+                "likelihood": "Most likely",
                 "effort": "Low–medium",
                 "blast_radius": "Account takeover of weak accounts",
+                "why": "GetCredentialType lets attackers confirm which emails exist before spraying.",
                 "steps": [
-                    "Use GetCredentialType / realm discovery to validate identities",
-                    "Spray against managed cloud auth or legacy protocols",
-                    "Pivot into mail / SharePoint once a weak account falls",
+                    "Validate users via GetCredentialType",
+                    "Spray against managed auth or legacy protocols",
+                    "Access mail / SharePoint as the user",
+                ],
+            }
+        )
+
+    if has("device code"):
+        chains.append(
+            {
+                "name": "Device-code phishing",
+                "likelihood": "Most likely",
+                "effort": "Low",
+                "blast_radius": "Token theft without guessing passwords",
+                "why": "Victims complete a real Microsoft login for the attacker.",
+                "steps": [
+                    "Send convincing device-code instructions",
+                    "Capture OAuth tokens",
+                    "Read mail/files or plant persistence",
+                ],
+            }
+        )
+
+    if has("ropc") or has("basic authentication") or has("ews advertises basic"):
+        chains.append(
+            {
+                "name": "Legacy / ROPC MFA bypass class",
+                "likelihood": "Most likely",
+                "effort": "Medium",
+                "blast_radius": "Auth without interactive MFA",
+                "why": "Legacy and ROPC-style flows historically skip interactive MFA prompts.",
+                "steps": [
+                    "Identify allowed legacy/ROPC surfaces",
+                    "Authenticate with password only",
+                    "Pull tokens or mailbox data",
                 ],
             }
         )
@@ -45,61 +80,106 @@ def build_attack_chains(result: AssessmentResult) -> list[dict]:
         chains.append(
             {
                 "name": "Federation / ADFS follow-on",
+                "likelihood": "Possible",
                 "effort": "Medium–high",
-                "blast_radius": "Tenant-wide impersonation if IdP is owned",
+                "blast_radius": "Tenant-wide if IdP is owned",
+                "why": "Federated tenants expose on-prem IdP surfaces attackers prefer for Golden SAML-style outcomes.",
                 "steps": [
-                    "Locate AuthURL / ADFS from realm discovery",
-                    "Probe federation endpoints and relying-party exposure",
-                    "Abuse federation weaknesses toward Golden SAML-style outcomes",
+                    "Hit AuthURL / MEX / IdP-initiated pages",
+                    "Map relying parties",
+                    "Abuse weak federation configuration",
                 ],
             }
         )
 
-    if has("device code") or has("oauth phishing"):
+    if has("dangling cname") or has("takeover"):
         chains.append(
             {
-                "name": "Device-code phishing",
+                "name": "Azure subdomain takeover",
+                "likelihood": "Possible",
+                "effort": "Low–medium",
+                "blast_radius": "Trusted-host phishing / content control",
+                "why": "Dangling Microsoft-platform CNAMEs can be claimed by an attacker.",
+                "steps": [
+                    "Find dangling CNAME to Azure service",
+                    "Claim the resource name",
+                    "Host phishing on a trusted hostname",
+                ],
+            }
+        )
+
+    if has("odata") and has("anonymously"):
+        chains.append(
+            {
+                "name": "Anonymous Power Pages data leak",
+                "likelihood": "Most likely",
                 "effort": "Low",
-                "blast_radius": "Token theft without password",
+                "blast_radius": "Business data exposure",
+                "why": "Anonymous OData 200 means direct data access without login.",
                 "steps": [
-                    "Social-engineer victim into completing device-code login",
-                    "Receive OAuth tokens for Graph / mail / files",
-                    "Persist via consented app or mailbox rules",
+                    "Query exposed OData entities",
+                    "Extract contacts/accounts",
+                    "Use data for fraud or further phish",
                 ],
             }
         )
 
-    if has("sharepoint") and has("host"):
-        chains.append(
-            {
-                "name": "Collaboration surface abuse",
-                "effort": "Medium",
-                "blast_radius": "Data exposure via sharing links",
-                "steps": [
-                    "Confirm SharePoint/OneDrive hostname footprint",
-                    "Hunt anonymous / guest sharing edges",
-                    "Exfiltrate or plant malicious content for internal users",
-                ],
-            }
-        )
-
-    # Always provide at least one narrative for empty/edge cases
     if not chains:
         chains.append(
             {
-                "name": "Baseline external reconnaissance",
+                "name": "Baseline external recon → phishing",
+                "likelihood": "Possible",
                 "effort": "Low",
-                "blast_radius": "Improved targeting for phishing",
+                "blast_radius": "Improved targeting",
+                "why": "Even without misconfigurations, public fingerprinting improves attacker lures.",
                 "steps": [
-                    "Fingerprint tenant and region from public OIDC metadata",
-                    "Classify managed vs federated authentication",
-                    "Prioritize phishing and spray against observed services",
+                    "Fingerprint tenant and services",
+                    "Craft tenant-specific phishing",
+                    "Aim for device-code or consent abuse",
                 ],
             }
         )
 
-    # Rank by severity presence
-    high = sum(1 for f in result.findings if f.severity in {Severity.CRITICAL, Severity.HIGH})
-    for c in chains:
-        c["signal_strength"] = "High" if high >= 2 else "Moderate"
-    return chains[:5]
+    # Sort: Most likely first
+    order = {"Most likely": 0, "Possible": 1, "Less likely": 2}
+    chains.sort(key=lambda c: order.get(c.get("likelihood", "Possible"), 9))
+    return chains[:6]
+
+
+def build_likelihood_briefing(result: AssessmentResult) -> dict:
+    """Clear High/Medium/Low + most/less likely messaging for the UI."""
+    hml = result.high_medium_low_counts()
+    most = [f for f in result.findings if f.likelihood == Likelihood.MOST_LIKELY and f.severity in {Severity.HIGH, Severity.MEDIUM}]
+    possible = [f for f in result.findings if f.likelihood == Likelihood.POSSIBLE and f.severity != Severity.INFO]
+    less = [f for f in result.findings if f.likelihood == Likelihood.LESS_LIKELY]
+
+    def pack(items: list, limit: int = 5) -> list[dict]:
+        return [
+            {
+                "title": f.title,
+                "severity": f.severity.value,
+                "why": f.why or f.description,
+                "attack_path": f.attack_path,
+                "remediation": f.remediation,
+            }
+            for f in sorted(items, key=lambda x: {"high": 0, "medium": 1, "low": 2}.get(x.severity.value, 9))[:limit]
+        ]
+
+    top_chain = (result.metadata.get("attack_chains") or build_attack_chains(result) or [{}])[0]
+    return {
+        "counts": hml,
+        "headline": (
+            f"{hml['high']} High · {hml['medium']} Medium · {hml['low']} Low findings on {result.tenant_domain}."
+        ),
+        "most_likely_bypass": {
+            "summary": top_chain.get("name", "Review High findings first"),
+            "why": top_chain.get("why", ""),
+            "steps": top_chain.get("steps", []),
+            "items": pack(most),
+        },
+        "possible": {"items": pack(possible)},
+        "less_likely": {
+            "summary": "Informational or well-mitigated signals — still verify, but deprioritize.",
+            "items": pack(less, 4),
+        },
+    }
