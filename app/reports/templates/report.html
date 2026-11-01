@@ -6,215 +6,116 @@
   <title>M365 Red Team — {{ result.tenant_domain }}</title>
   <style>
     :root {
-      --ink: #122018;
-      --muted: #5a6a63;
-      --line: #d5e0da;
-      --paper: #f3f7f5;
-      --panel: #ffffff;
-      --accent: #0f7a5a;
-      --accent-deep: #0b3d36;
-      --critical: #b42318;
-      --high: #c4320a;
-      --medium: #b54708;
-      --low: #175cd3;
-      --info: #475467;
-      --pass: #027a48;
-      --signal: #c45f1a;
-      --font: "Segoe UI", "IBM Plex Sans", system-ui, sans-serif;
-      --display: "Segoe UI Semibold", "Sora", system-ui, sans-serif;
+      --ink:#122018; --muted:#5a6a63; --line:#d5e0da; --paper:#f3f7f5; --panel:#fff;
+      --accent:#0b3d36; --high:#b42318; --medium:#b54708; --low:#175cd3; --pass:#027a48; --info:#475467;
+      --signal:#c45f1a;
     }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--paper); line-height: 1.5; }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 2rem 1.25rem 3.5rem; }
-    .mast {
-      background: linear-gradient(135deg, #0b3d36 0%, #145c4c 55%, #1a6b4f 100%);
-      color: #eef6f2;
-      padding: 1.6rem 1.4rem 1.35rem;
-      margin: -2rem -1.25rem 1.5rem;
-    }
-    .mast-inner { max-width: 980px; margin: 0 auto; }
-    .brand { font-family: var(--display); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; }
-    h1 { font-family: var(--display); font-size: 1.85rem; margin: 0.35rem 0 0.4rem; letter-spacing: -0.03em; }
-    .meta { opacity: 0.9; font-size: 0.92rem; }
-    .auth-banner {
-      margin: 0 0 1.25rem;
-      padding: 0.75rem 0.9rem;
-      border-left: 3px solid var(--signal);
-      background: rgba(196, 95, 26, 0.1);
-      font-size: 0.9rem;
-    }
-    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.55rem; margin: 1rem 0 1.4rem; }
-    .stat { background: var(--panel); border: 1px solid var(--line); padding: 0.7rem 0.8rem; }
-    .stat b { display: block; font-size: 1.35rem; font-family: var(--display); }
-    .stat span { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .panel { background: var(--panel); border: 1px solid var(--line); padding: 1rem 1.1rem; margin-bottom: 1rem; }
-    .panel h2 { font-family: var(--display); font-size: 1.15rem; margin: 0 0 0.55rem; color: var(--accent-deep); }
-    .fingerprint { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.65rem; font-size: 0.9rem; }
-    .fingerprint div { border-top: 1px solid var(--line); padding-top: 0.4rem; }
-    .fingerprint label { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .chain { border-left: 3px solid var(--accent); padding: 0.55rem 0 0.55rem 0.85rem; margin: 0.65rem 0; }
-    .chain h3 { margin: 0 0 0.25rem; font-size: 1rem; font-family: var(--display); }
-    .chain .meta-line { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.35rem; }
-    .chain ol { margin: 0.2rem 0 0; padding-left: 1.1rem; }
-    .toolbar { display: flex; flex-wrap: wrap; gap: 0.45rem; margin: 0.75rem 0 1rem; }
-    .toolbar button, .toolbar input {
-      font: inherit; border: 1px solid var(--line); background: #fff; padding: 0.35rem 0.6rem; cursor: pointer;
-    }
-    .toolbar button.active { background: var(--accent-deep); color: #fff; border-color: var(--accent-deep); }
-    .toolbar input { min-width: 180px; cursor: text; }
-    .finding { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--info); padding: 0.85rem 1rem; margin-bottom: 0.65rem; }
-    .finding.critical { border-left-color: var(--critical); }
-    .finding.high { border-left-color: var(--high); }
-    .finding.medium { border-left-color: var(--medium); }
-    .finding.low { border-left-color: var(--low); }
-    .finding.info { border-left-color: var(--info); }
-    .finding.pass { border-left-color: var(--pass); }
-    .finding.hidden { display: none; }
-    .sev { text-transform: uppercase; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
-    .finding h3 { margin: 0.15rem 0 0.4rem; font-size: 1.02rem; font-family: var(--display); }
-    .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 0.5rem; }
-    details.evidence { margin-top: 0.45rem; font-size: 0.85rem; }
-    details.evidence pre { background: #122018; color: #d7ebe2; padding: 0.65rem; overflow: auto; font-size: 0.75rem; }
-    footer { margin-top: 2rem; font-size: 0.8rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 0.85rem; }
-    @media print {
-      .toolbar, .auth-banner { display: none !important; }
-      .mast { margin: 0 0 1rem; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .finding { break-inside: avoid; }
-      body { background: #fff; }
-    }
+    body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.5}
+    .mast{background:var(--accent);color:#eef6f2;padding:1.4rem 1.25rem}
+    .wrap{max-width:960px;margin:0 auto;padding:1.25rem 1.25rem 3rem}
+    .brand{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+    h1{margin:.3rem 0;font-size:1.7rem;letter-spacing:-.02em}
+    .notice{margin:1rem 0;padding:.75rem .9rem;border-left:3px solid var(--signal);background:rgba(196,95,26,.1);font-size:.92rem}
+    .hml{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin:1rem 0 1.25rem}
+    .hml div{padding:.85rem;border:1px solid var(--line);background:#fff}
+    .hml b{display:block;font-size:1.8rem}
+    .high{border-top:4px solid var(--high)} .medium{border-top:4px solid var(--medium)} .low{border-top:4px solid var(--low)}
+    .panel{background:#fff;border:1px solid var(--line);padding:1rem 1.1rem;margin-bottom:1rem}
+    .panel h2{margin:0 0 .55rem;font-size:1.15rem;color:var(--accent)}
+    .chain{border-left:3px solid var(--accent);padding-left:.8rem;margin:.6rem 0}
+    .finding{background:#fff;border:1px solid var(--line);border-left:4px solid var(--info);padding:.85rem 1rem;margin-bottom:.55rem}
+    .finding.high{border-left-color:var(--high)} .finding.medium{border-left-color:var(--medium)}
+    .finding.low{border-left-color:var(--low)} .finding.pass{border-left-color:var(--pass)}
+    .sev{font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+    .label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-top:.45rem}
+    details pre{background:#122018;color:#d7ebe2;padding:.65rem;overflow:auto;font-size:.75rem}
+    .toolbar{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0 1rem}
+    .toolbar button,.toolbar input{font:inherit;border:1px solid var(--line);background:#fff;padding:.35rem .55rem}
+    .toolbar button.active{background:var(--accent);color:#fff}
+    .finding.hidden{display:none}
+    footer{margin-top:1.5rem;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:.75rem}
+    @media print{.toolbar,.notice{display:none!important}}
   </style>
 </head>
 <body>
   <div class="mast">
-    <div class="mast-inner">
+    <div class="wrap" style="padding-top:0;padding-bottom:0">
       <div class="brand">M365 Red Team</div>
-      <h1>External Entra assessment report</h1>
-      <div class="meta">
-        Tenant <strong>{{ result.tenant_domain }}</strong>
-        · Profile <strong>{{ result.profile.label }}</strong>
-        · Run {{ result.run_id }}
-        · {{ generated_at }}
-        {% if result.demo_mode %}· Demo flag on (external probes still use public endpoints){% endif %}
-      </div>
+      <h1>External Entra scan report</h1>
+      <div>{{ result.tenant_domain }} · {{ generated_at }} · run {{ result.run_id }}</div>
     </div>
   </div>
-
   <div class="wrap">
-    <div class="auth-banner">
-      <strong>Authorized use only.</strong> Confirm you have written permission for this tenant.
-      Public signals in this report are also visible to attackers — verify findings on the target before you change controls, and notify stakeholders when you scan.
+    <div class="notice"><strong>Authorized use only.</strong> Notify stakeholders. Attackers can see the same public signals. Verify findings on the target before remediating.</div>
+
+    {% set counts = briefing.counts if briefing else result.high_medium_low_counts() %}
+    <div class="hml">
+      <div class="high"><span>HIGH</span><b>{{ counts.get('high', 0) }}</b>Fix first</div>
+      <div class="medium"><span>MEDIUM</span><b>{{ counts.get('medium', 0) }}</b>Plan remediation</div>
+      <div class="low"><span>LOW</span><b>{{ counts.get('low', 0) }}</b>Smaller blast radius</div>
     </div>
 
-    {% set counts = result.severity_counts() %}
-    <div class="grid-stats">
-      <div class="stat"><b>{{ result.findings|length }}</b><span>Findings</span></div>
-      <div class="stat"><b>{{ counts.get('critical', 0) + counts.get('high', 0) }}</b><span>Critical / High</span></div>
-      <div class="stat"><b>{{ counts.get('medium', 0) }}</b><span>Medium</span></div>
-      <div class="stat"><b>{{ counts.get('pass', 0) }}</b><span>Barriers / Pass</span></div>
-      <div class="stat"><b>{{ chains|length }}</b><span>Attack chains</span></div>
-    </div>
-
-    {% if fingerprint %}
     <section class="panel">
-      <h2>Tenant fingerprint</h2>
-      <div class="fingerprint">
-        <div><label>Domain</label>{{ fingerprint.get('input_domain', result.tenant_domain) }}</div>
-        <div><label>Tenant ID</label>{{ fingerprint.get('tenant_id', '—') }}</div>
-        <div><label>Region</label>{{ fingerprint.get('region', '—') }}</div>
-        <div><label>Namespace</label>{{ fingerprint.get('namespace_type', '—') }}</div>
-        <div><label>Federation brand</label>{{ fingerprint.get('federation_brand', '—') }}</div>
-        <div><label>Mail domain</label>{{ fingerprint.get('mail_domain', '—') }}</div>
-      </div>
+      <h2>Most likely bypass</h2>
+      {% set most = briefing.most_likely_bypass if briefing else {} %}
+      <p><strong>{{ most.get('summary', 'See High findings') }}</strong></p>
+      {% if most.get('why') %}<p>{{ most.why }}</p>{% endif %}
+      {% if most.get('steps') %}
+      <ol>{% for s in most.steps %}<li>{{ s }}</li>{% endfor %}</ol>
+      {% endif %}
     </section>
-    {% endif %}
 
     <section class="panel">
       <h2>Executive narrative</h2>
-      <p>{{ result.ai_summary or "No summary generated." }}</p>
+      <p>{{ result.ai_summary }}</p>
     </section>
 
     <section class="panel">
-      <h2>Likely attack chains</h2>
+      <h2>Attack chains</h2>
       {% for c in chains %}
-        <div class="chain">
-          <h3>{{ c.name }}</h3>
-          <div class="meta-line">Effort: {{ c.effort }} · Blast radius: {{ c.blast_radius }} · Signal: {{ c.signal_strength }}</div>
-          <ol>
-            {% for step in c.steps %}<li>{{ step }}</li>{% endfor %}
-          </ol>
-        </div>
-      {% else %}
-        <p>No chains derived.</p>
+      <div class="chain">
+        <strong>{{ c.name }}</strong>
+        <div style="color:var(--muted);font-size:.9rem">{{ c.likelihood }} · Effort {{ c.effort }} · {{ c.blast_radius }}</div>
+        <p>{{ c.why }}</p>
+        <ol>{% for s in c.steps %}<li>{{ s }}</li>{% endfor %}</ol>
+      </div>
       {% endfor %}
     </section>
 
-    <h2 style="font-family:var(--display);color:var(--accent-deep);">Findings</h2>
+    <h2 style="color:var(--accent)">Findings</h2>
     <div class="toolbar" id="filters">
       <button type="button" class="active" data-filter="all">All</button>
-      <button type="button" data-filter="critical">Critical</button>
       <button type="button" data-filter="high">High</button>
       <button type="button" data-filter="medium">Medium</button>
       <button type="button" data-filter="low">Low</button>
-      <button type="button" data-filter="info">Info</button>
-      <button type="button" data-filter="pass">Pass</button>
-      <input id="search" type="search" placeholder="Filter findings…" />
+      <input id="search" type="search" placeholder="Filter…" />
     </div>
 
     {% for f in result.findings %}
-      <article class="finding {{ f.severity.value }}" data-sev="{{ f.severity.value }}" data-text="{{ (f.title ~ ' ' ~ f.description ~ ' ' ~ f.category.label)|e }}">
-        <div class="sev">{{ f.severity.value }} · {{ f.category.label }}</div>
-        <h3>{{ f.title }}</h3>
-        <p>{{ f.description }}</p>
-        {% if f.attack_path %}
-          <div class="label">Attack path</div>
-          <div>{{ f.attack_path }}</div>
-        {% endif %}
-        {% if f.barrier %}
-          <div class="label">Security barrier</div>
-          <div>{{ f.barrier }}</div>
-        {% endif %}
-        {% if f.remediation %}
-          <div class="label">Remediation</div>
-          <div>{{ f.remediation }}</div>
-        {% endif %}
-        {% if f.evidence %}
-          <details class="evidence">
-            <summary>Evidence</summary>
-            <pre>{{ f.evidence | tojson(indent=2) }}</pre>
-          </details>
-        {% endif %}
-      </article>
+    <article class="finding {{ f.severity.value }}" data-sev="{{ f.severity.value }}" data-text="{{ (f.title ~ ' ' ~ f.description ~ ' ' ~ f.why)|e }}">
+      <div class="sev">{{ f.severity.value }} · {{ f.likelihood.label }} · {{ f.phase or f.category.label }}</div>
+      <h3 style="margin:.2rem 0">{{ f.title }}</h3>
+      <p>{{ f.description }}</p>
+      {% if f.why %}<div class="label">Why</div><div>{{ f.why }}</div>{% endif %}
+      {% if f.attack_path %}<div class="label">Attack path</div><div>{{ f.attack_path }}</div>{% endif %}
+      {% if f.barrier %}<div class="label">Barrier</div><div>{{ f.barrier }}</div>{% endif %}
+      {% if f.remediation %}<div class="label">Remediation</div><div>{{ f.remediation }}</div>{% endif %}
+      {% if f.evidence %}
+      <details><summary>Evidence</summary><pre>{{ f.evidence | tojson(indent=2) }}</pre></details>
+      {% endif %}
+    </article>
     {% endfor %}
 
-    <footer>
-      {{ org }} · Generated {{ generated_at }}.
-      External modules use public Microsoft endpoints only (read-only).
-      Always verify results on the authorized target tenant before acting.
-    </footer>
+    <footer>{{ org }} · Public endpoints only · Verify on authorized tenant</footer>
   </div>
-
   <script>
-    (function () {
-      const buttons = document.querySelectorAll('#filters button');
-      const search = document.getElementById('search');
-      const cards = document.querySelectorAll('.finding');
-      let sev = 'all';
-      function apply() {
-        const q = (search.value || '').toLowerCase();
-        cards.forEach((el) => {
-          const okSev = sev === 'all' || el.dataset.sev === sev;
-          const okQ = !q || (el.dataset.text || '').toLowerCase().includes(q);
-          el.classList.toggle('hidden', !(okSev && okQ));
-        });
-      }
-      buttons.forEach((btn) => btn.addEventListener('click', () => {
-        buttons.forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        sev = btn.dataset.filter;
-        apply();
-      }));
-      search.addEventListener('input', apply);
-    })();
+    const buttons=[...document.querySelectorAll('#filters button')];
+    const search=document.getElementById('search');
+    const cards=[...document.querySelectorAll('.finding')];
+    let sev='all';
+    function apply(){const q=(search.value||'').toLowerCase();cards.forEach(el=>{const ok=(sev==='all'||el.dataset.sev===sev)&&(!q||(el.dataset.text||'').toLowerCase().includes(q));el.classList.toggle('hidden',!ok);});}
+    buttons.forEach(b=>b.addEventListener('click',()=>{buttons.forEach(x=>x.classList.remove('active'));b.classList.add('active');sev=b.dataset.filter;apply();}));
+    search.addEventListener('input',apply);
   </script>
 </body>
 </html>

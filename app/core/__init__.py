@@ -1,4 +1,11 @@
-from .models import AttackProfile, AssessmentCategory, Finding, Severity, AssessmentResult
+from .models import (
+    AttackProfile,
+    AssessmentCategory,
+    Finding,
+    Severity,
+    Likelihood,
+    AssessmentResult,
+)
 from .config import load_settings
 
 __all__ = [
@@ -6,6 +13,7 @@ __all__ = [
     "AssessmentCategory",
     "Finding",
     "Severity",
+    "Likelihood",
     "AssessmentResult",
     "load_settings",
 ]

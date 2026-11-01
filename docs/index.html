@@ -3,20 +3,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>M365 Red Team — See what an attacker can learn about your Entra tenant</title>
-  <meta name="description" content="Authorized Microsoft 365 / Entra red team toolkit for Windows. External Entra scans in seconds, plus compromised user and admin profiles. Verify findings. Notify stakeholders." />
+  <title>M365 Red Team — External Entra domain scan</title>
+  <meta name="description" content="Authorized external Entra / Microsoft 365 domain scan for Windows. High, Medium, Low findings. Most likely bypass paths. Verify results. Notify stakeholders." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@550;650;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="site-header">
     <a class="logo" href="#top">M365 Red Team</a>
     <nav>
-      <a href="#why">Why</a>
-      <a href="#profiles">Profiles</a>
-      <a href="#external">External scan</a>
+      <a href="#product">Product</a>
+      <a href="#checks">Checks</a>
       <a href="#install">Install</a>
       <a href="#rules">Rules</a>
     </nav>
@@ -24,115 +23,93 @@
 
   <main id="top">
     <section class="hero">
-      <div class="hero-media" role="img" aria-label="Operations board mapping an Entra identity footprint">
-        <img src="assets/hero-entra-map.jpg" alt="" width="1280" height="720" />
+      <p class="brand-mark">M365 Red Team</p>
+      <h1>External Entra domain scan for authorized teams</h1>
+      <p class="lede">
+        Enter a domain. In a few seconds you get High / Medium / Low findings,
+        the most likely bypass path, and a clear explanation of what matters less.
+      </p>
+      <div class="cta-row">
+        <a class="btn primary" href="#install">Run on Windows</a>
+        <a class="btn ghost" href="https://github.com/vladjoh/RedTeam">View source</a>
       </div>
-      <div class="hero-copy">
-        <p class="brand-mark">M365 Red Team</p>
-        <h1>See what an attacker can learn about your Microsoft tenant — in seconds</h1>
-        <p class="lede">
-          A Windows-local assessment tool for authorized teams. Start with an external Entra domain scan,
-          then optionally walk compromised-user and admin perspectives.
-        </p>
-        <div class="cta-row">
-          <a class="btn primary" href="#install">Run on Windows</a>
-          <a class="btn ghost" href="https://github.com/vladjoh/RedTeam">GitHub</a>
+
+      <div class="sample" aria-label="Sample severity summary">
+        <div class="sample-top">
+          <strong>Sample result shape</strong>
+          <span>contoso.com · external · ~seconds</span>
+        </div>
+        <div class="hml">
+          <div class="high"><span>HIGH</span><b>4</b><small>Fix first</small></div>
+          <div class="medium"><span>MEDIUM</span><b>6</b><small>Plan next</small></div>
+          <div class="low"><span>LOW</span><b>9</b><small>Lower priority</small></div>
+        </div>
+        <div class="sample-bypass">
+          <div class="label">Most likely bypass</div>
+          <p><strong>Spoofed mail → device-code phishing</strong> — missing DMARC plus reachable GetCredentialType makes trusted-looking mail and validated users the shortest path in.</p>
         </div>
       </div>
     </section>
 
-    <section id="why" class="section">
-      <h2>Why this exists</h2>
-      <p class="section-lede">Public Microsoft endpoints already expose a surprising amount of tenant signal.</p>
-      <div class="why-grid">
-        <article>
-          <h3>Same view as an outsider</h3>
-          <p>If you can fingerprint federation, mail auth, and service hostnames without logging in, so can an attacker who knows your domain.</p>
-        </article>
-        <article>
-          <h3>Fast enough to use often</h3>
-          <p>An external Entra pass typically finishes in a few seconds. Use it before deeper user/admin work — not as a multi-hour science project.</p>
-        </article>
-        <article>
-          <h3>Barriers, not just buzzwords</h3>
-          <p>Findings call out attack paths and the controls that stop them, so reports help defenders prioritize instead of dumping raw JSON.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="profiles" class="section section-alt">
-      <h2>Three attack profiles</h2>
-      <p class="section-lede">One toolkit. Three adversary positions.</p>
-      <div class="profile-rows">
-        <article class="profile">
-          <h3>1. External Attacker</h3>
-          <p>No login. Live recon against public Entra / M365 endpoints: tenant fingerprint, federation type, GetCredentialType reachability, DNS mail posture, SharePoint host hints, device-code risk.</p>
-        </article>
-        <article class="profile">
-          <h3>2. Compromised User</h3>
-          <p>Standard account via MSAL. Apps, mail, Teams, SharePoint, OAuth grants, and escalation edges — when you have written approval to authenticate.</p>
-        </article>
-        <article class="profile">
-          <h3>3. Compromised Admin</h3>
-          <p>Administrator blast radius: roles, app credentials, persistence, and tenant configuration impact.</p>
-        </article>
-      </div>
-    </section>
-
-    <section id="external" class="section">
-      <h2>External Entra scan</h2>
-      <p class="section-lede">Purpose-built for the unauthenticated first pass — our own product surface, not a clone of other recon tools.</p>
-      <ul class="check-list">
-        <li>Tenant OpenID fingerprint (issuer, region, tenant ID when available)</li>
-        <li>Managed vs Federated realm discovery + AuthURL hints</li>
-        <li>GetCredentialType API reachability (user-validation risk)</li>
-        <li>SPF / DMARC / MX mail posture on the domain you enter</li>
-        <li>SharePoint / OneDrive hostname presence</li>
-        <li>Device-code / OAuth phishing surface call-outs</li>
-        <li>Attack-chain narrative + interactive HTML report</li>
+    <section id="product" class="section">
+      <h2>What it does</h2>
+      <p class="section-lede">One job: unauthenticated Entra / M365 recon against a domain you are allowed to test.</p>
+      <ul class="plain-list">
+        <li><strong>High / Medium / Low</strong> severity — no vague score soup.</li>
+        <li><strong>Most likely bypass</strong> — what an attacker would try first, and why.</li>
+        <li><strong>Possible / less likely</strong> — so you do not treat every info finding as urgent.</li>
+        <li><strong>HTML report</strong> with evidence, filters, and remediation hints.</li>
       </ul>
-      <p class="fine">Always verify results on the target tenant. Public signals can change; treat the report as a starting map.</p>
     </section>
 
-    <section id="install" class="section section-alt">
-      <h2>Run it on Windows</h2>
-      <p class="section-lede">Two scripts. Browser opens on its own when the dashboard is ready.</p>
+    <section id="checks" class="section section-alt">
+      <h2>Check coverage</h2>
+      <p class="section-lede">Same problem space as full Entra recon suites — implemented as this product’s own external scanner.</p>
+      <div class="check-grid">
+        <article><h3>Tenant &amp; federation</h3><p>OpenID fingerprint, Managed/Federated realm, ADFS MEX / IdP-initiated hints, B2C / CIAM hosts.</p></article>
+        <article><h3>Identity enum</h3><p>GetCredentialType reachability, OneDrive URL patterns, Graph metadata.</p></article>
+        <article><h3>DNS / mail</h3><p>MX, SPF, DMARC, DKIM selectors, TXT SaaS markers, SRV.</p></article>
+        <article><h3>M365 services</h3><p>SharePoint / OneDrive / admin hosts, REST anonymity check, EXO endpoints, common app portals.</p></article>
+        <article><h3>MFA / auth gaps</h3><p>ROPC risk class, device-code phishing, EWS Basic advert, ADFS WS-Trust endpoints.</p></article>
+        <article><h3>OAuth &amp; Azure edge</h3><p>Consent / FOCI risk classes, dangling Azure CNAMEs, Power Pages OData probes.</p></article>
+      </div>
+    </section>
+
+    <section id="install" class="section">
+      <h2>Install on Windows</h2>
       <ol class="steps">
         <li>
-          <strong>Install Python 3.11+</strong>
-          <p>From <a href="https://www.python.org/downloads/windows/">python.org</a>. Check <strong>Add python.exe to PATH</strong>.</p>
+          <strong>Python 3.11+</strong>
+          <p>Install from python.org and check <strong>Add python.exe to PATH</strong>.</p>
         </li>
         <li>
-          <strong>Open the project folder in PowerShell</strong>
+          <strong>Clone and setup</strong>
           <pre><code>git clone https://github.com/vladjoh/RedTeam.git
-cd RedTeam</code></pre>
-        </li>
-        <li>
-          <strong>Setup, then start</strong>
-          <pre><code>.\scripts\setup-windows.ps1
+cd RedTeam
+.\scripts\setup-windows.ps1
 .\scripts\run-assessment.ps1</code></pre>
-          <p>Leave the window open. Your browser should open <code>http://localhost:8501</code> automatically.</p>
+          <p>Browser opens <code>http://localhost:8501</code> when ready.</p>
         </li>
         <li>
-          <strong>Run External</strong>
-          <p>Enter an authorized domain → choose <strong>External Attacker</strong> → <strong>Start Red Team Assessment</strong> → download the HTML report.</p>
+          <strong>Scan</strong>
+          <p>Enter an authorized domain → <strong>Start external scan</strong> → read High / Medium / Low → download the report.</p>
         </li>
       </ol>
-      <p>Details &amp; troubleshooting: <a href="https://github.com/vladjoh/RedTeam/blob/main/SETUP-WINDOWS.md">SETUP-WINDOWS.md</a></p>
+      <p><a href="https://github.com/vladjoh/RedTeam/blob/main/SETUP-WINDOWS.md">SETUP-WINDOWS.md</a></p>
     </section>
 
-    <section id="rules" class="section">
-      <h2>Rules of engagement</h2>
+    <section id="rules" class="section section-alt">
+      <h2>Rules</h2>
       <div class="notice">
-        <p><strong>Only scan tenants you are authorized to test.</strong> Get written permission. Tell the people who own the tenant before you run.</p>
-        <p>What you see in an external report, an attacker can often discover just as easily. Do not treat silence as safety.</p>
-        <p>Verify findings on the target before you change production controls. This tool is read-only by default and meant for defensive assessment — not for surprise testing.</p>
+        <p><strong>Only scan tenants you are authorized to test.</strong> Get written permission and tell the owners before you run.</p>
+        <p>What this tool sees from outside, an attacker can usually see too. Silence is not safety.</p>
+        <p>Always verify findings on the target before changing production controls. The scan uses public endpoints only and finishes in seconds — that does not make surprise testing OK.</p>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <p><span class="logo">M365 Red Team</span> — local Windows assessment toolkit.</p>
+    <p><span class="logo">M365 Red Team</span></p>
     <p><a href="https://github.com/vladjoh/RedTeam">GitHub</a></p>
   </footer>
   <script src="main.js"></script>

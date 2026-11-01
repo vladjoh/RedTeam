@@ -12,33 +12,18 @@ from pydantic import BaseModel, Field
 
 class AttackProfile(str, Enum):
     EXTERNAL = "external"
-    USER = "user"
-    ADMIN = "admin"
 
     @property
     def label(self) -> str:
-        return {
-            AttackProfile.EXTERNAL: "External Attacker",
-            AttackProfile.USER: "Compromised User",
-            AttackProfile.ADMIN: "Compromised Admin",
-        }[self]
+        return "External Entra scan"
 
     @property
     def description(self) -> str:
-        return {
-            AttackProfile.EXTERNAL: (
-                "No authenticated access. Map exposed services, identities, "
-                "domains, and possible entry paths."
-            ),
-            AttackProfile.USER: (
-                "Standard user account. Inspect app/data/group access, "
-                "SharePoint, Teams, and privilege-escalation opportunities."
-            ),
-            AttackProfile.ADMIN: (
-                "Administrator compromised. Review privileges, app control, "
-                "tenant configuration, and blast radius of admin compromise."
-            ),
-        }[self]
+        return (
+            "No login. Live public reconnaissance of an Entra / Microsoft 365 domain: "
+            "fingerprint, federation, user-enum APIs, mail DNS, M365 services, MFA gaps, "
+            "and likely bypass paths."
+        )
 
 
 class AssessmentCategory(str, Enum):
@@ -46,55 +31,73 @@ class AssessmentCategory(str, Enum):
     IDENTITY_SECURITY = "identity_security"
     MFA_CONDITIONAL_ACCESS = "mfa_conditional_access"
     OAUTH_ENTERPRISE_APPS = "oauth_enterprise_apps"
-    PRIVILEGE_ESCALATION = "privilege_escalation"
     SHAREPOINT_EXCHANGE_TEAMS = "sharepoint_exchange_teams"
-    LATERAL_MOVEMENT = "lateral_movement"
-    PERSISTENCE_RISK = "persistence_risk"
+    DNS_MAIL = "dns_mail"
+    AZURE_EDGE = "azure_edge"
 
     @property
     def label(self) -> str:
         return {
-            AssessmentCategory.ATTACK_SURFACE: "Attack surface discovery",
-            AssessmentCategory.IDENTITY_SECURITY: "Identity security",
-            AssessmentCategory.MFA_CONDITIONAL_ACCESS: "MFA / Conditional Access",
-            AssessmentCategory.OAUTH_ENTERPRISE_APPS: "OAuth / Enterprise Applications",
-            AssessmentCategory.PRIVILEGE_ESCALATION: "Privilege escalation paths",
-            AssessmentCategory.SHAREPOINT_EXCHANGE_TEAMS: "SharePoint / Exchange / Teams",
-            AssessmentCategory.LATERAL_MOVEMENT: "Lateral movement analysis",
-            AssessmentCategory.PERSISTENCE_RISK: "Persistence risk assessment",
+            AssessmentCategory.ATTACK_SURFACE: "Tenant & federation",
+            AssessmentCategory.IDENTITY_SECURITY: "Identity enumeration",
+            AssessmentCategory.MFA_CONDITIONAL_ACCESS: "MFA / auth gaps",
+            AssessmentCategory.OAUTH_ENTERPRISE_APPS: "OAuth / device code",
+            AssessmentCategory.SHAREPOINT_EXCHANGE_TEAMS: "M365 services",
+            AssessmentCategory.DNS_MAIL: "DNS / mail",
+            AssessmentCategory.AZURE_EDGE: "Azure edge / takeover hints",
         }[self]
 
 
 class Severity(str, Enum):
-    CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
     LOW = "low"
     INFO = "info"
     PASS = "pass"
 
+    @property
+    def label(self) -> str:
+        return self.value.upper()
+
+
+class Likelihood(str, Enum):
+    MOST_LIKELY = "most_likely"
+    POSSIBLE = "possible"
+    LESS_LIKELY = "less_likely"
+
+    @property
+    def label(self) -> str:
+        return {
+            Likelihood.MOST_LIKELY: "Most likely bypass",
+            Likelihood.POSSIBLE: "Possible path",
+            Likelihood.LESS_LIKELY: "Less likely",
+        }[self]
+
 
 class Finding(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4())[:8])
     category: AssessmentCategory
-    profile: AttackProfile
+    profile: AttackProfile = AttackProfile.EXTERNAL
     title: str
     severity: Severity
     description: str
     evidence: dict[str, Any] = Field(default_factory=dict)
     remediation: str = ""
-    barrier: str = ""  # security control that stops or mitigates this path
+    barrier: str = ""
     attack_path: str = ""
+    likelihood: Likelihood = Likelihood.POSSIBLE
+    why: str = ""
+    phase: str = ""
 
 
 class AssessmentResult(BaseModel):
     run_id: str = Field(default_factory=lambda: str(uuid4())[:12])
     tenant_domain: str
-    profile: AttackProfile
-    categories: list[AssessmentCategory]
+    profile: AttackProfile = AttackProfile.EXTERNAL
+    categories: list[AssessmentCategory] = Field(default_factory=list)
     started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     finished_at: datetime | None = None
-    demo_mode: bool = True
+    demo_mode: bool = False
     findings: list[Finding] = Field(default_factory=list)
     ai_summary: str = ""
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -104,6 +107,13 @@ class AssessmentResult(BaseModel):
         for f in self.findings:
             counts[f.severity.value] += 1
         return counts
+
+    def high_medium_low_counts(self) -> dict[str, int]:
+        return {
+            "high": sum(1 for f in self.findings if f.severity == Severity.HIGH),
+            "medium": sum(1 for f in self.findings if f.severity == Severity.MEDIUM),
+            "low": sum(1 for f in self.findings if f.severity == Severity.LOW),
+        }
 
     def mark_finished(self) -> None:
         self.finished_at = datetime.now(timezone.utc)
