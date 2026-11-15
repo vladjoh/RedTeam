@@ -6,8 +6,9 @@
     window.addEventListener("scroll", onScroll, { passive: true });
   }
 
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const sections = document.querySelectorAll(".section");
-  if ("IntersectionObserver" in window) {
+  if (!reduceMotion && "IntersectionObserver" in window) {
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {

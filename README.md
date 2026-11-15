@@ -6,7 +6,7 @@ Enter a domain → get **High / Medium / Low** findings in a few seconds → see
 
 > **Authorized use only.** Get written permission, tell the tenant owner before you scan, and verify findings before changing controls. Public signals are also visible to attackers.
 
-**Docs:** https://vladjoh.github.io/RedTeam/
+**Company site:** static files in [`docs/`](docs/) — host with **Cloudflare Pages** so the GitHub repo can stay **private**. Setup: [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md).
 
 ## Quick start (Windows)
 
