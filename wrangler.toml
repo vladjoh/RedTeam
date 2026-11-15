@@ -1,0 +1,7 @@
+# Cloudflare Pages — static site in docs/
+# Dashboard Git integration is the primary deploy path (see docs/CLOUDFLARE.md).
+# Optional CLI: npx wrangler pages deploy docs --project-name=m365-red-team
+
+name = "m365-red-team"
+compatibility_date = "2026-11-15"
+pages_build_output_dir = "docs"
